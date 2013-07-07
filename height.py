@@ -6,9 +6,38 @@ class World:
 	def __init__(self):
 		global size
 		global points
-		size = (2**9)+1
+		size = (2**10)+1
 		points = []
 		points = self.createPoints()
+
+	def diamondSquareAlgorithm(self, root_square):
+		count = 0
+		root_square.modCenter()
+		c_squares = root_square.getSquareChildren()
+		c_diamonds = root_square.getDiamondChildren()
+
+		while(True):
+			#Mod children diamonds
+			for di in c_diamonds:
+				di.modCenter()
+
+			#Mod children squares
+			for sq in c_squares:
+				if(sq.tooSmall()):
+					return
+				sq.modCenter()
+
+			#Get new children
+			temp_squares = []
+			temp_diamonds = []
+			for sq in c_squares:
+				temp_diamonds.extend(sq.getDiamondChildren())
+				temp_squares.extend(sq.getSquareChildren())
+
+			c_diamonds = temp_diamonds
+			c_squares = temp_squares
+			
+			count = count + 1
 
 	def printPoints(self):
 		count = 0
@@ -50,9 +79,9 @@ class World:
 				point = self.getPoint(x,y)
 				amt = point.h
 				if(amt < 100):
-					im.putpixel((x,y), (0,0,amt+20))
+					im.putpixel((x,y), (0,0,amt+40))
 				else:
-					im.putpixel((x,y), (0,amt-100,0))
+					im.putpixel((x,y), (0,amt-120,0))
 
 		im.save(str(name)+".png")
 
@@ -73,8 +102,11 @@ class World:
 			return Point(x,y,0)
 
 		point = points[(size * y) + x]
-
 		return point
+
+	@staticmethod
+	def getMidpoint(point1, point2):
+		return World.getPoint((point2.x+point1.x)/2, (point2.y+point1.y)/2)
 
 	def getSize(self):
 		return size
@@ -92,27 +124,40 @@ class Point:
 	def __str__(self):
 		return str(self.x)+","+str(self.y)
 
-class Square:
-	def __init__(self, tl, tr, bl, br):
-		self.mod = 2
-		self.tl = tl
-		self.tr = tr
-		self.bl = bl
-		self.br = br
+class Quad:
+	def __init__(self, p1, p2, p3, p4):
+		self.mod = 4
+		self.tl = p1
+		self.tr = p2
+		self.bl = p3
+		self.br = p4
+
+		self.top = p1
+		self.bot = p2
+		self.lef = p3
+		self.rig = p4
 
 	def getAverageHeight(self):
 		return (self.tl.h+self.tr.h+self.bl.h+self.br.h)/4
 
 	def getCenter(self):
-		return Main.getMidpoint(self.tl,self.br)
+		return World.getMidpoint(self.tl,self.br)
+
+	def getSize(self):
+		size_x = self.br.x-self.tl.x
+		size_y = self.br.y-self.tl.y
+		return size_x*size_y
 
 	def modCenter(self):
 		center = self.getCenter()
 		avg = self.getAverageHeight()
 		center.setHeight(avg+randrange(-avg/self.mod,avg/self.mod,1))
-		#center.setHeight(avg+randrange(0,avg/self.mod,1))
-		self.mod = self.mod/6
+		self.mod = self.mod*2
 
+	def tooSmall(self):
+		return self.getSize()<=1
+
+class Square (Quad):
 	def getDiamondChildren(self):
 		center = self.getCenter()
 
@@ -123,21 +168,12 @@ class Square:
 
 		return [top_d, bot_d, left_d, right_d]
 
-	def getSize(self):
-		size_x = self.br.x-self.tl.x
-		size_y = self.br.y-self.tl.y
-
-		return size_x*size_y
-
-	def tooSmall(self):
-		return self.getSize()<=1
-
 	def getSquareChildren(self):
-		top = Main.getMidpoint(self.tl,self.tr)
-		bot = Main.getMidpoint(self.bl,self.br)
-		left = Main.getMidpoint(self.tl,self.bl)
-		right = Main.getMidpoint(self.tr,self.br)
-		center = Main.getMidpoint(self.tl, self.br)
+		top = World.getMidpoint(self.tl,self.tr)
+		bot = World.getMidpoint(self.bl,self.br)
+		left = World.getMidpoint(self.tl,self.bl)
+		right = World.getMidpoint(self.tr,self.br)
+		center = World.getMidpoint(self.tl, self.br)
 		
 		square_tl = Square(self.tl, top, left, center)
 		square_tr = Square(top, self.tr, center, right)
@@ -149,32 +185,15 @@ class Square:
 	def __str__(self):
 		return "TopLeft: \n"+str(self.tl)+"\nTopRight: \n"+str(self.tr)+"\nBotLeft: \n"+str(self.bl)+"\nBotRight:\n "+str(self.br)
 
-class Diamond:
-	def __init__(self, top, bot, lef, rig):
-		self.mod=2
-		self.top = top
-		self.bot = bot
-		self.lef = lef
-		self.rig = rig
-
-	def getAverageHeight(self):
-		return (self.top.h+self.bot.h+self.lef.h+self.rig.h)/4
-
+class Diamond (Quad):
 	def getCenter(self):
-		return Main.getMidpoint(self.top, self.bot)
-
-	def modCenter(self):
-		center = self.getCenter()
-		avg = self.getAverageHeight()
-		center.setHeight(avg+randrange(-avg/self.mod,avg/self.mod,1))
-		#center.setHeight(avg+randrange(0,avg/self.mod,1))
-		self.mod = self.mod/6
+		return World.getMidpoint(self.top, self.bot)
 
 	def getSquare(self):
-		tl = Main.getMidpoint(self.top, self.lef)
-		tr = Main.getMidpoint(self.top, self.rig)
-		bl = Main.getMidpoint(self.bot, self.lef)
-		br = Main.getMidpoint(self.bot, self.rig)
+		tl = Worldn.getMidpoint(self.top, self.lef)
+		tr = World.getMidpoint(self.top, self.rig)
+		bl = World.getMidpoint(self.bot, self.lef)
+		br = World.getMidpoint(self.bot, self.rig)
 
 		return Square(tl, tr, bl, br)
 
@@ -183,68 +202,33 @@ class Diamond:
 
 class Main:
 	def __init__(self):
-		global world
-		global count
-		global seed
 		seed = randrange(100,160,1)
 		count = 1
 		world = World()
 		size = world.getSize()-1
 
 		tl = world.getPoint(0,0)
-		tl.setHeight(seed)
 		tr = world.getPoint(size,0)
-		tr.setHeight(seed)
 		bl = world.getPoint(0,size)
-		bl.setHeight(seed)
 		br = world.getPoint(size,size)
+
+		tl.setHeight(seed)
+		tr.setHeight(seed)
+		bl.setHeight(seed)
 		br.setHeight(seed)
 
 		root_square = Square(tl, tr, bl, br)
 
 		#Recursion
-		self.diamondSquareAlgorithm(root_square)
+		world.diamondSquareAlgorithm(root_square)
 
 		#Normalization
 		world.normalizePoints(5)
 
-		#Print
+		#Print Points
 		#world.printPoints()
 
-		#Image
+		#Write Image
 		world.writeImage("img")
 
-	def diamondSquareAlgorithm(self, root_square):
-		count = 0
-		root_square.modCenter()
-		c_squares = root_square.getSquareChildren()
-		c_diamonds = root_square.getDiamondChildren()
-
-		while(True):
-			#Mod children diamonds
-			for di in c_diamonds:
-				di.modCenter()
-
-			#Mod children squares
-			for sq in c_squares:
-				if(sq.tooSmall()):
-					return
-				sq.modCenter()
-
-			#Get new children
-			temp_squares = []
-			temp_diamonds = []
-			for sq in c_squares:
-				temp_diamonds.extend(sq.getDiamondChildren())
-				temp_squares.extend(sq.getSquareChildren())
-
-			c_diamonds = temp_diamonds
-			c_squares = temp_squares
-			
-			count = count + 1
-
-	@staticmethod
-	def getMidpoint(point1, point2):
-		return world.getPoint((point2.x+point1.x)/2, (point2.y+point1.y)/2)
-		
 main = Main()
