@@ -3,10 +3,10 @@ from PIL import Image
 from random import randrange
 
 class World:
-	def __init__(self):
+	def __init__(self, the_size):
 		global size
 		global points
-		size = (2**10)+1
+		size = (2**the_size)+1
 		points = []
 		points = self.createPoints()
 
@@ -79,9 +79,9 @@ class World:
 				point = self.getPoint(x,y)
 				amt = point.h
 				if(amt < 100):
-					im.putpixel((x,y), (0,0,amt+40))
+					im.putpixel((x,y), (0,0,amt+200))
 				else:
-					im.putpixel((x,y), (0,amt-120,0))
+					im.putpixel((x,y), (0,amt-60,0))
 
 		im.save(str(name)+".png")
 
@@ -202,9 +202,9 @@ class Diamond (Quad):
 
 class Main:
 	def __init__(self):
-		seed = randrange(100,160,1)
+		seed = 150
 		count = 1
-		world = World()
+		world = World(9)
 		size = world.getSize()-1
 
 		tl = world.getPoint(0,0)
@@ -223,7 +223,7 @@ class Main:
 		world.diamondSquareAlgorithm(root_square)
 
 		#Normalization
-		world.normalizePoints(5)
+		world.normalizePoints(6)
 
 		#Print Points
 		#world.printPoints()
