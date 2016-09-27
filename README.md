@@ -4,10 +4,11 @@ An implementation of the diamond-square algorithm which has been imagined to be 
 
 ##Dependencies
 NumPy
+
 Python Imaging Library (PIL)
 
 ##Installing
-'git clone https://github.com/Blrp/TerrainGeneration'
+`git clone https://github.com/Blrp/TerrainGeneration`
 
 ##Running
-'python height.py' 
+`python height.py`
